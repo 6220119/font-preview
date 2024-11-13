@@ -40,6 +40,7 @@
 
     #dropArea {
       margin-bottom: 20px;
+      cursor: pointer;
     }
 
     #dropArea {
@@ -99,7 +100,8 @@
 
 <body>
   <h1>Font Preview</h1>
-  <div id="dropArea">Drop your .ttf font file here.</div>
+  <div id="dropArea">Drop your .ttf font file here or click to select.</div>
+  <input type="file" id="fileInput" accept=".ttf" style="display: none;">
   <label>
     <span>Sample Text</span>
     <textarea id="inputText"
@@ -159,6 +161,33 @@
 
     inputText.addEventListener('input', updatePreviews);
 
+    updatePreviews();
+
+    function handleFontFile(file) {
+      dropArea.textContent = '';
+
+      const instruction = document.createElement('span');
+      instruction.textContent = 'Drop your .ttf font file here or click to select.';
+      dropArea.appendChild(instruction);
+
+      dropArea.appendChild(document.createElement('br'));
+
+      const loadedFont = document.createElement('strong');
+      loadedFont.textContent = `Loaded font: ${file.name}`;
+      dropArea.appendChild(loadedFont);
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const fontFace = new FontFace('CustomFont', e.target.result);
+        fontFace.load().then(function (loadedFace) {
+          document.fonts.add(loadedFace);
+          document.body.style.fontFamily = 'CustomFont, sans-serif';
+          updatePreviews();
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
     dropArea.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropArea.style.background = '#e1e1e1';
@@ -167,38 +196,25 @@
     dropArea.addEventListener('dragleave', () => {
       dropArea.style.background = '';
     });
-
     dropArea.addEventListener('drop', (e) => {
       e.preventDefault();
       dropArea.style.background = '';
       const file = e.dataTransfer.files[0];
       if (file && file.name.endsWith('.ttf')) {
-        dropArea.textContent = '';
-
-        const instruction = document.createElement('span');
-        instruction.textContent = 'Drop your .ttf font file here.';
-        dropArea.appendChild(instruction);
-
-        dropArea.appendChild(document.createElement('br'));
-
-        const loadedFont = document.createElement('strong');
-        loadedFont.textContent = `Loaded font: ${file.name}`;
-        dropArea.appendChild(loadedFont);
-
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const fontFace = new FontFace('CustomFont', e.target.result);
-          fontFace.load().then(function (loadedFace) {
-            document.fonts.add(loadedFace);
-            document.body.style.fontFamily = 'CustomFont, sans-serif';
-            updatePreviews();
-          });
-        };
-        reader.readAsArrayBuffer(file);
+        handleFontFile(file);
       }
     });
 
-    updatePreviews();
+    dropArea.addEventListener('click', () => {
+      document.getElementById('fileInput').click();
+    });
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file && file.name.endsWith('.ttf')) {
+        handleFontFile(file);
+      }
+    });
 
     // Google Font preview functionality
     const googleFontsPreviewText = document.getElementById('googleFontsPreviewText');
