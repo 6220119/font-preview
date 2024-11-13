@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Font Preview</title>
+  <style>
+    * {
+      margin: 0;
+    }
+
+    body {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    html,
+    body,
+    div,
+    p,
+    h1,
+    h2,
+    h3 {
+      vertical-align: baseline;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0.5em 0;
+    }
+
+    textarea,
+    #dropArea {
+      width: 100%;
+      height: 100px;
+    }
+
+    #dropArea {
+      margin-bottom: 20px;
+    }
+
+    #dropArea {
+      font-family: 'revert';
+      border: 2px dashed #ccc;
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .preview {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+
+    h3 {
+      text-transform: capitalize;
+    }
+
+    #googleFontsPreview {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+
+    #googleFontsPreviewText {
+      line-height: normal;
+    }
+
+    .text-settings {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 24px;
+    }
+
+    input[type="range"] {
+      width: 150px;
+      margin: 0 10px;
+    }
+
+    label>span {
+      display: block;
+      font-size: 0.85em;
+      margin-bottom: 0.25em;
+    }
+
+    hr {
+      margin: 2rem auto;
+      border: 1px dashed #babaca;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Font Preview</h1>
+  <div id="dropArea">Drop your .ttf font file here.</div>
+  <label>
+    <span>Sample Text</span>
+    <textarea id="inputText"
+      placeholder="Enter your text here...">The quick brown fox jumps over the lazy dog.</textarea>
+  </label>
+
+  <hr />
+
+  <div id="previewContainer"></div>
+
+  <div id="googleFontsPreview">
+    <h2>Using Google Fonts Type Tester Settings</h2>
+    <div class="text-settings">
+      <code>line-height: normal /</code>
+      <code>font-size:</code>
+      <input type="range" id="fontSizeSlider" min="8" max="72" value="16">
+      <code id="currentFontSize">16</code><code>px</code>
+    </div>
+    <p id="googleFontsPreviewText"></p>
+  </div>
+
+  <script>
+    const previewConfigs = [
+      { name: 'heading-01', fontSize: 40, lineHeight: 48 },
+      { name: 'heading-02', fontSize: 32, lineHeight: 40 },
+      { name: 'heading-03', fontSize: 24, lineHeight: 32 },
+      { name: 'heading-04', fontSize: 20, lineHeight: 28 },
+      { name: 'heading-05', fontSize: 18, lineHeight: 26 },
+      { name: 'body-01', fontSize: 16, lineHeight: 24 },
+      { name: 'body-02', fontSize: 14, lineHeight: 20 },
+      { name: 'callout', fontSize: 12, lineHeight: 16 },
+      { name: 'metadata', fontSize: 10, lineHeight: 12 }
+    ];
+    const inputText = document.getElementById('inputText');
+    const previewContainer = document.getElementById('previewContainer');
+    const dropArea = document.getElementById('dropArea');
+
+    function updatePreviews() {
+      previewContainer.innerHTML = '';
+      previewConfigs.forEach(config => {
+        const preview = document.createElement('div');
+        preview.className = 'preview';
+        preview.style.fontSize = `${config.fontSize}px`;
+        preview.style.lineHeight = `${config.lineHeight}px`;
+
+        const heading = document.createElement('h3');
+        heading.textContent = `${config.name}: ${config.fontSize}px / ${config.lineHeight}px`;
+        preview.appendChild(heading);
+
+        const paragraph = document.createElement('p');
+        paragraph.textContent = inputText.value;
+        preview.appendChild(paragraph);
+
+        previewContainer.appendChild(preview);
+      });
+    }
+
+    inputText.addEventListener('input', updatePreviews);
+
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.style.background = '#e1e1e1';
+    });
+
+    dropArea.addEventListener('dragleave', () => {
+      dropArea.style.background = '';
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.style.background = '';
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.ttf')) {
+        dropArea.textContent = '';
+
+        const instruction = document.createElement('span');
+        instruction.textContent = 'Drop your .ttf font file here.';
+        dropArea.appendChild(instruction);
+
+        dropArea.appendChild(document.createElement('br'));
+
+        const loadedFont = document.createElement('strong');
+        loadedFont.textContent = `Loaded font: ${file.name}`;
+        dropArea.appendChild(loadedFont);
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const fontFace = new FontFace('CustomFont', e.target.result);
+          fontFace.load().then(function (loadedFace) {
+            document.fonts.add(loadedFace);
+            document.body.style.fontFamily = 'CustomFont, sans-serif';
+            updatePreviews();
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      }
+    });
+
+    updatePreviews();
+
+    // Google Font preview functionality
+    const googleFontsPreviewText = document.getElementById('googleFontsPreviewText');
+    const currentFontSize = document.getElementById('currentFontSize');
+    const fontSizeSlider = document.getElementById('fontSizeSlider');
+
+    function updateGoogleFontsPreview() {
+      googleFontsPreviewText.textContent = inputText.value;
+    }
+
+    fontSizeSlider.addEventListener('input', function () {
+      const size = this.value;
+      currentFontSize.textContent = size;
+      googleFontsPreviewText.style.fontSize = `${size}px`;
+    });
+
+    inputText.addEventListener('input', updateGoogleFontsPreview);
+
+    updateGoogleFontsPreview();
+  </script>
+</body>
+
+</html>
